@@ -77,12 +77,15 @@ import {
 } from '@/pages/client/billing';
 
 import NotFoundPage from '@/components/page/NotFoundPage';
+import LegalPage from '@/pages/legal/LegalPage';
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<LandingPage />} />{' '}
+        <Route path="privacy" element={<LegalPage type="privacy" />} />
+        <Route path="terms" element={<LegalPage type="terms" />} />
       </Route>
 
       <Route element={<AuthLayout />}>

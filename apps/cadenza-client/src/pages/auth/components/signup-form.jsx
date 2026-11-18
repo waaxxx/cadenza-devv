@@ -8,8 +8,10 @@ import { getGoogleOAuthUrl } from '@/services/auth/authService';
 import { authService } from '@/services/auth/authService';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { UserRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import { legalContact, privacyPolicy, termsAndConditions } from '@/pages/legal/policyContent';
 
 export function SignupForm({ className, ...props }) {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ export function SignupForm({ className, ...props }) {
   const [termsRead, setTermsRead] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [legalDocument, setLegalDocument] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -45,16 +48,17 @@ export function SignupForm({ className, ...props }) {
         <div className="flex flex-col items-center gap-2 text-center"><h1 className="text-xl font-bold sm:text-2xl">Create your account</h1><p className="text-sm text-balance text-muted-foreground">Enter your email and we’ll send you a one-time verification code.</p></div>
         <Field><FieldLabel htmlFor="signup-email">Email</FieldLabel><Input id="signup-email" type="email" autoComplete="email" placeholder="m@example.com" value={email} onChange={(event) => setEmail(event.target.value)} required /></Field>
         <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-          <input type="checkbox" checked={termsAccepted} onChange={(event) => { if (event.target.checked) setTermsOpen(true); else setTermsAccepted(false); }} className="mt-0.5 accent-blue-700" />
-          <span>I agree to the <button type="button" className="font-medium text-blue-700 underline" onClick={() => setTermsOpen(true)}>Terms & Conditions</button>.</span>
+          <input type="checkbox" checked={termsAccepted} onChange={(event) => { if (event.target.checked) { setLegalDocument('terms'); setTermsRead(false); setTermsOpen(true); } else setTermsAccepted(false); }} className="mt-0.5 accent-blue-700" />
+          <span>I agree to the <button type="button" className="font-medium text-blue-700 underline" onClick={() => { setLegalDocument('terms'); setTermsOpen(true); }}>Terms & Conditions</button> and acknowledge the <button type="button" className="font-medium text-blue-700 underline" onClick={() => { setLegalDocument('privacy'); setTermsOpen(true); }}>Privacy Policy</button>. <button type="button" className="font-medium text-blue-700 underline" onClick={() => { setLegalDocument('terms'); setTermsOpen(true); }}>Review terms</button>.</span>
         </label>
-        <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Terms & Conditions</DialogTitle><DialogDescription>Read the complete terms before agreeing.</DialogDescription></DialogHeader>
-            <div className="h-72 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600" onScroll={(event) => { const element = event.currentTarget; if (element.scrollTop + element.clientHeight >= element.scrollHeight - 4) setTermsRead(true); }}>
-              <div className="space-y-4"><p>By creating a Cadenza account, you agree to provide accurate information and keep your account secure.</p><p>Cadenza may provide lesson enrollments, room bookings, instrument rentals, schedules, notifications, and payment records. Requests depend on availability, approval, operating hours, and applicable service rules.</p><p>You are responsible for attending scheduled lessons, following booking rules, returning rented instruments, and paying remaining balances or additional charges.</p><p>Cancellations and refunds are handled according to the applicable Cadenza service policy. Cadenza may restrict access for misuse, security concerns, inaccurate payment information, or violations of these terms.</p><p>Cadenza may send account, enrollment, booking, rental, schedule, and payment notifications through the portal, email, or mobile application.</p></div>
+        <Dialog dismissible={false} open={termsOpen} onOpenChange={(open) => { if (open) setTermsOpen(true); }}>
+          <DialogContent showCloseButton={false} className="grid max-h-[88vh] min-h-0 w-[min(92vw,1000px)] max-w-none grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden p-0" style={{ width: 'min(92vw, 1000px)', maxWidth: '1000px' }} onPointerDownOutside={(event) => event.preventDefault()} onInteractOutside={(event) => event.preventDefault()}>
+            <DialogHeader className="relative border-b border-slate-200 px-6 pb-4 pt-6 pr-14"><DialogTitle className="text-2xl font-black">{legalDocument === 'privacy' ? privacyPolicy.title : 'Terms & Conditions'}</DialogTitle><DialogDescription>{legalDocument === 'privacy' ? 'Information for Cadenza Music Center clients and service users.' : 'Read the complete terms before agreeing.'}</DialogDescription><button type="button" onClick={() => setTermsOpen(false)} className="absolute right-4 top-4 rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-950" aria-label="Close legal dialog">×</button></DialogHeader>
+            <div className="min-h-0 overflow-y-auto px-6 py-6 leading-7 text-slate-700" onScroll={(event) => { const element = event.currentTarget; if (legalDocument === 'terms' && element.scrollTop + element.clientHeight >= element.scrollHeight - 4) setTermsRead(true); }}>
+              <p className="text-base">{legalDocument === 'privacy' ? privacyPolicy.intro : termsAndConditions.intro}</p>
+              <div className="mt-7 space-y-7">{(legalDocument === 'privacy' ? privacyPolicy.sections : termsAndConditions.sections).map((section) => <section key={section.title}><h2 className="text-lg font-bold text-slate-950">{section.title}</h2>{section.paragraphs?.map((paragraph) => <p key={paragraph} className="mt-2">{paragraph}</p>)}{section.bullets ? <ul className="mt-2 list-disc space-y-2 pl-6">{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul> : null}{section.paragraphsAfter?.map((paragraph) => <p key={paragraph} className="mt-2">{paragraph}</p>)}</section>)}{legalDocument === 'privacy' ? <section><h2 className="text-lg font-bold text-slate-950">13. Contact us</h2><div className="mt-2 rounded-xl bg-slate-50 p-4"><p className="font-semibold">{legalContact.operator}</p><p>{legalContact.address}</p><p>Email: <a className="text-blue-700 underline" href={`mailto:${legalContact.email}`}>{legalContact.email}</a></p><p>Phone: {legalContact.phone}</p><p className="mt-2">You may also contact the Philippine National Privacy Commission through <a className="text-blue-700 underline" href="https://privacy.gov.ph/" target="_blank" rel="noreferrer">privacy.gov.ph</a>.</p></div></section> : null}</div>
             </div>
-            <DialogFooter><Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>Cancel</Button><Button type="button" disabled={!termsRead} onClick={() => { setTermsAccepted(true); setTermsOpen(false); }}>I Agree</Button></DialogFooter>
+            <DialogFooter className="border-t border-slate-200 px-6 py-4"><Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>Close</Button>{legalDocument === 'terms' ? <Button type="button" disabled={!termsRead} onClick={() => { setTermsAccepted(true); setTermsOpen(false); }}>I Agree</Button> : null}</DialogFooter>
           </DialogContent>
         </Dialog>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
